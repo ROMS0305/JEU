@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Labyrinthe Mystère</title>
+    <style>
+        /* Police moderne */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 4px 6px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 2s ease;
+        }
+
+        p {
+            color: #fff;
+            font-size: 1.2em;
+            text-align: center;
+            margin: 10px 0 30px;
+            max-width: 400px;
+            animation: fadeIn 3s ease;
+        }
+
+        #gameContainer {
+            display: flex;
+            justify-content: center;
+            position: relative;
+            animation: slideIn 2s ease;
+        }
+
+        #gameCanvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #fff;
+            text-align: center;
+            max-width: 400px;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Mobile-friendly setup */
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            p { font-size: 1em; }
+            #message { font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Le Labyrinthe Mystère</h1>
+    <p>Utilise les flèches ou tape l'écran pour sortir du labyrinthe. Es-tu prête ?</p>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Canvas Responsive dimensions
+        const width = Math.min(window.innerWidth * 0.9, 600);
+        canvas.width = width;
+        canvas.height = width;
+
+        const cellSize = canvas.width / 15;  // 15x15 grid
+        const mazeWidth = 15;
+        const mazeHeight = 15;
+
+        let player = {
+            x: 0,
+            y: 0
+        };
+
+        const exit = {
+            x: mazeWidth - 1,
+            y: mazeHeight - 1
+        };
+
+        const maze = [
+            [0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0],
+            [0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0],
+            [0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0],
+            [1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+            [0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+            [0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+            [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+            [0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0],
+            [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1],
+            [0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+            [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0]
+        ];
+
+        function drawMaze() {
+            for (let y = 0; y < mazeHeight; y++) {
+                for (let x = 0; x < mazeWidth; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = '#444';
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    } else {
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = '#ff5f6d';  // Player color
+            ctx.fillRect(player.x * cellSize, player.y * cellSize, cellSize, cellSize);
+            ctx.strokeStyle = '#333';
+            ctx.strokeRect(player.x * cellSize, player.y * cellSize, cellSize, cellSize);
+        }
+
+        function checkWin() {
+            if (player.x === exit.x && player.y === exit.y) {
+                const messageEl = document.getElementById('message');
+                messageEl.innerText = "Bravo ! Tu es sortie du labyrinthe... et si on se retrouvait autour d’un verre ? 🍸";
+                messageEl.style.opacity = '1';
+                window.removeEventListener('keydown', movePlayer);
+            }
+        }
+
+        function movePlayer(event) {
+            const key = event.key;
+
+            switch (key) {
+                case 'ArrowUp':
+                    if (player.y > 0 && maze[player.y - 1][player.x] === 0) {
+                        player.y--;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (player.y < mazeHeight - 1 && maze[player.y + 1][player.x] === 0) {
+                        player.y++;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (player.x > 0 && maze[player.y][player.x - 1]
